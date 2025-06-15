@@ -1,4 +1,2 @@
-gradio
-openai
+flask
 gtts
-speechrecognition
