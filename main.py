@@ -31,7 +31,7 @@ def register():
         users = load_users()
         if email in users:
             return 'Email already registered.'
-        
+       
         users[email] = {'name': name, 'password': password, 'coins': 0, 'gender': gender, 'logs': []}
         save_users(users)
         return redirect('/login')
@@ -51,11 +51,11 @@ def login():
         return 'Invalid login.'
     return render_template('login.html')
 
-@app.route('/dashboard', methods=['GET', 'POST'])
+@app.route('/dashboard')
 def dashboard():
     if 'email' not in session:
         return redirect('/login')
-    
+   
     users = load_users()
     user = users[session['email']]
     return render_template('dashboard.html', user=user)
@@ -68,23 +68,27 @@ def speak():
     theme = request.form['theme']
     voice = request.form['voice']
     text = f"Welcome to the {theme} conversation! Let's begin."
-    tts = gTTS(text=text, lang='en', tld='co.in' if voice == 'female' else 'com')
-    filename = f'static/audio/{time.time()}.mp3'
+
+    filename = f'static/audio/{int(time.time())}.mp3'
     os.makedirs(os.path.dirname(filename), exist_ok=True)
-    tts.save(filename)
+
+    try:
+        tts = gTTS(text=text, lang='en', tld='co.in' if voice == 'female' else 'com')
+        tts.save(filename)
+    except Exception as e:
+        return f"Error generating voice: {e}"
 
     users = load_users()
     user = users[session['email']]
     user['coins'] += 1
-    user['logs'].append({'time': time.ctime(), 'theme': theme})
+    user['logs'].append({'theme': theme, 'timestamp': time.time()})
     save_users(users)
 
-    return render_template('dashboard.html', user=user, audio=filename)
+    return render_template('speak.html', audio_file='/' + filename, theme=theme, voice=voice)
 
-@app.route('/logout')
-def logout():
-    session.pop('email', None)
-    return redirect('/')
-
+# ✅ For Render Deployment
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
+
+

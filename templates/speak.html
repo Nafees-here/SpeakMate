@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Speak - SpeakMate</title>
+</head>
+<body>
+  <h2>{{ theme.title() }} Conversation with {{ voice }} voice</h2>
+  <audio controls autoplay>
+    <source src="{{ url_for('static', filename=audio_file.split('static/')[-1]) }}" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+  <br><br>
+  <a href="/dashboard">Back to Dashboard</a>
+</body>
+</html>
+
