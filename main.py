@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, request, redirect, session, url_for
 import json, os, time
 from gtts import gTTS
@@ -18,7 +17,7 @@ def save_users(users):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return redirect('/register')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -27,11 +26,9 @@ def register():
         email = request.form['email']
         password = request.form['password']
         gender = request.form['gender']
-
         users = load_users()
         if email in users:
             return 'Email already registered.'
-       
         users[email] = {'name': name, 'password': password, 'coins': 0, 'gender': gender, 'logs': []}
         save_users(users)
         return redirect('/login')
@@ -42,7 +39,6 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-
         users = load_users()
         user = users.get(email)
         if user and user['password'] == password:
@@ -51,11 +47,10 @@ def login():
         return 'Invalid login.'
     return render_template('login.html')
 
-@app.route('/dashboard')
+@app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     if 'email' not in session:
         return redirect('/login')
-   
     users = load_users()
     user = users[session['email']]
     return render_template('dashboard.html', user=user)
@@ -64,31 +59,20 @@ def dashboard():
 def speak():
     if 'email' not in session:
         return redirect('/login')
-
     theme = request.form['theme']
     voice = request.form['voice']
     text = f"Welcome to the {theme} conversation! Let's begin."
-
+    tts = gTTS(text=text, lang='en', tld='co.in' if voice == 'female' else 'com')
     filename = f'static/audio/{int(time.time())}.mp3'
     os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-    try:
-        tts = gTTS(text=text, lang='en', tld='co.in' if voice == 'female' else 'com')
-        tts.save(filename)
-    except Exception as e:
-        return f"Error generating voice: {e}"
-
+    tts.save(filename)
     users = load_users()
     user = users[session['email']]
     user['coins'] += 1
     user['logs'].append({'theme': theme, 'timestamp': time.time()})
     save_users(users)
+    return render_template('speak.html', audio_file=filename, theme=theme, voice=voice)
 
-    return render_template('speak.html', audio_file='/' + filename, theme=theme, voice=voice)
-
-# ✅ For Render Deployment
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
-
-
